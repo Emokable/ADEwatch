@@ -15,14 +15,13 @@ NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
 #include <AliyunIoTSDK.h>
 
 // 设置产品和设备的信息，从阿里云设备信息里查看
-#define PRODUCT_KEY "j1g2YbuEwWq"
-#define DEVICE_NAME "DEV1"
-#define DEVICE_SECRET "1eeb3da1674a7b5dac02812897071ed0"
-#define REGION_ID "cn-shanghai"
-// const char* ssid = "hamood";          //自己热点或者wifi名称
-// const char* password = "asdzxcfvgb";  //自己热点或者wifi密码
-const char* reqUserKey = "Si17oX5f7TkNpaxBk";  // 私钥
-char* reqLocation = "shanghai";                 // 城市，可使用"ip"自动识别请求 IP 地址
+#define PRODUCT_KEY "  "
+#define DEVICE_NAME ""
+#define DEVICE_SECRET ""
+#define REGION_ID ""
+
+const char* reqUserKey = "";  // 私钥
+char* reqLocation = "";                 // 城市，可使用"ip"自动识别请求 IP 地址
 
 const char* reqUnit = "c";  // 摄氏(c)/华氏(f)
 #include <ArduinoJson.h>
@@ -34,7 +33,7 @@ void setup() {
   // wm.resetSettings(); //test wifi
 
   bool res;
-  res = wm.autoConnect("FJR9476Y583U5UYYUYY'WIFI");  // anonymous ap
+  res = wm.autoConnect("FJR9476Y583U5UYYUYY'WIFI");  // 设置 ap
   if (!res) {
     Serial.println("Failed to connect");
     // ESP.restart();
