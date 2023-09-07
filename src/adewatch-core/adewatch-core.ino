@@ -1,0 +1,541 @@
+#include <TimeLib.h>
+#define TIME_HEADER "T"  // Header tag for serial time sync message
+#include "U8glib.h"
+U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_DEV_0 | U8G_I2C_OPT_NO_ACK | U8G_I2C_OPT_FAST);  // Fast I2C / TWI  It is an I2C device, and only uses two of the data pins, A4 and A5
+#include <DFPlayerMini_Fast.h>
+
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(10, 11);  // RX, TX
+DFPlayerMini_Fast myMP3;
+bool mp3play = false;  //  pause/start flag
+
+
+
+#include <ArduinoJson.h>
+SoftwareSerial nodemcu(6, 5);  //rx ,tx
+String Type;
+String Temperature;  // 31
+String weather_now;  // "Cloudy"
+#define leter_NUM 27
+
+char leter[leter_NUM] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+
+// 'scrollbar_background', 8x64px
+const unsigned char bitmap_scrollbar_background[] PROGMEM = {
+  0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02,
+  0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02,
+  0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02,
+  0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x00
+};
+
+// 'item_sel_outline', 128x21px
+const unsigned char bitmap_item_sel_outline[] PROGMEM = {
+  0x1f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xc0,
+  0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+  0x3f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xe0,
+  0x1f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xc0
+};
+
+
+const unsigned char MainUI[] PROGMEM = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x01, 0xC4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x52, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x0A, 0x4A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x4A,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x01, 0xF0, 0x0E, 0x52, 0x01, 0xFC, 0x3F, 0x07, 0xF0, 0x3F,
+  0x83, 0xF8, 0x01, 0xC4, 0x03, 0xFE, 0x7F, 0x8F, 0xF8, 0x60, 0xC6, 0x0C, 0x00, 0x58, 0x03, 0x06,
+  0x60, 0xCC, 0x00, 0xC0, 0x6C, 0x06, 0x00, 0x00, 0x03, 0x06, 0x60, 0x4F, 0xC0, 0xC0, 0x7C, 0x46,
+  0x00, 0x00, 0x03, 0xFE, 0x60, 0x4F, 0xE0, 0xCE, 0x7C, 0xE6, 0x00, 0x00, 0x03, 0xFE, 0x60, 0x4C,
+  0x00, 0xC0, 0x7C, 0x46, 0x00, 0x00, 0x03, 0x06, 0x60, 0xCC, 0x00, 0xC0, 0x6C, 0x06, 0x00, 0x00,
+  0x03, 0x06, 0x7F, 0x8F, 0xF8, 0x60, 0xC6, 0x0C, 0x00, 0x00, 0x03, 0x06, 0x3F, 0x07, 0xF0, 0x3F,
+  0x83, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x01, 0xF0, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x04, 0x3F, 0x87, 0xF0, 0xFE, 0x18, 0xC0, 0x00, 0x00,
+  0x03, 0x06, 0x7F, 0xCF, 0xF9, 0xFF, 0x38, 0xE0, 0x00, 0x00, 0x03, 0x26, 0x60, 0xC1, 0xC1, 0xC0,
+  0x38, 0xE0, 0x00, 0x00, 0x03, 0x76, 0x60, 0xC1, 0xC1, 0x80, 0x3F, 0xE0, 0x00, 0x00, 0x03, 0x76,
+  0x7F, 0xC1, 0xC1, 0x80, 0x3F, 0xE0, 0x00, 0x00, 0x03, 0xFE, 0x7F, 0xC1, 0xC1, 0x80, 0x3F, 0xE0,
+  0x00, 0x00, 0x03, 0xFE, 0x60, 0xC1, 0xC1, 0xC0, 0x38, 0xE0, 0x00, 0x00, 0x03, 0x76, 0x60, 0xC1,
+  0xC1, 0xFF, 0x38, 0xE0, 0x00, 0x00, 0x02, 0x02, 0x60, 0xC0, 0x80, 0xFE, 0x38, 0xE0, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0xF8, 0x03, 0xC1, 0xC0, 0x38, 0x3C, 0x00,
+  0xFF, 0x80, 0x3F, 0xF8, 0x02, 0x61, 0x40, 0x28, 0x64, 0x01, 0x00, 0x40, 0x3F, 0xF8, 0x02, 0x31,
+  0x40, 0x28, 0xC4, 0x01, 0x08, 0x40, 0x18, 0x60, 0x02, 0x19, 0x40, 0x29, 0x84, 0x01, 0x08, 0x40,
+  0x18, 0x60, 0x02, 0x0D, 0x40, 0x2B, 0x04, 0x01, 0x08, 0x40, 0x18, 0x60, 0x02, 0x07, 0x40, 0x2E,
+  0x04, 0x01, 0x08, 0x40, 0x18, 0x60, 0x02, 0x0D, 0x40, 0x2B, 0x04, 0x01, 0x04, 0x40, 0x18, 0x78,
+  0x02, 0x19, 0x40, 0x29, 0x84, 0x01, 0x02, 0x40, 0x1E, 0x7C, 0x02, 0x31, 0x40, 0x28, 0xC4, 0x01,
+  0x00, 0x40, 0x1F, 0x3C, 0x02, 0x61, 0x40, 0x28, 0x64, 0x01, 0x00, 0x40, 0x0E, 0x18, 0x03, 0xC1,
+  0xC0, 0x38, 0x3C, 0x00, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xE0,
+  0x00, 0x30, 0x00, 0x04, 0x10, 0x00, 0xAA, 0x80, 0x1F, 0xF8, 0x01, 0x7F, 0xC0, 0x0E, 0x38, 0x01,
+  0xFF, 0xC0, 0x1F, 0xF8, 0x01, 0x30, 0x40, 0x1F, 0x7C, 0x00, 0xFF, 0x80, 0x3F, 0xFC, 0x01, 0x00,
+  0x40, 0x31, 0xB8, 0x01, 0xC1, 0xC0, 0x3F, 0xFC, 0x01, 0x00, 0x40, 0x31, 0xB8, 0x00, 0xDD, 0x80,
+  0x12, 0x48, 0x01, 0x00, 0x40, 0x3F, 0xB8, 0x01, 0xD5, 0xC0, 0x12, 0x08, 0x01, 0x00, 0x40, 0x3F,
+  0xB8, 0x00, 0xDD, 0x80, 0x10, 0x48, 0x03, 0x80, 0x40, 0x31, 0xB8, 0x01, 0xC1, 0xC0, 0x12, 0x48,
+  0x03, 0x80, 0x40, 0x00, 0x38, 0x00, 0xFF, 0x80, 0x02, 0x48, 0x01, 0x01, 0x80, 0x3F, 0xB8, 0x01,
+  0xFF, 0xC0, 0x02, 0x08, 0x00, 0x7F, 0xC0, 0x3F, 0xB8, 0x00, 0xAA, 0x80, 0x00, 0x00, 0x00, 0x01,
+  0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /* "pic/MainUI.BMP" */
+};
+// ------------------ end generated bitmaps from image2cpp ---------------------------------
+
+
+// ------------------ MENU setting ---------------------------------
+
+const byte NUM_ITEMS = 8;         // number of items in the list
+const byte MAX_ITEM_LENGTH = 20;  // maximum characters for the item name
+
+char menu_items[NUM_ITEMS][MAX_ITEM_LENGTH] = {  // array with item names
+  { "S/P" },
+  { "Next" },
+  { "Pre" },
+  { "Time" },
+  { "Wea" },
+  { "Ref" },
+  { "Game" },
+  { "Ver" }
+};
+
+
+// ------------------ BUTTON setting ---------------------------------
+
+#define BUTTON_UP_PIN 12     // pin for UP button
+#define BUTTON_SELECT_PIN 8  // pin for SELECT button
+#define BUTTON_DOWN_PIN 4    // pin for DOWN button
+#define Volume_PIN A0        // pin for DOWN button
+
+byte button_up_clicked = 0;      // only perform action when button is clicked, and wait until another press
+byte button_select_clicked = 0;  // same as above
+byte button_down_clicked = 0;    // same as above
+
+int item_selected = 0;    // which item in the menu is selected
+int item_sel_previous;    // previous item - used in the menu screen to draw the item before the selected one
+int item_sel_next;        // next item - used in the menu screen to draw next item after the selected one
+byte current_screen = 0;  // 0 = menu, 1 = function
+
+
+DynamicJsonDocument doc(80);  //声明一个JsonDocument对象
+
+// version show
+void showversion() {
+  u8g.firstPage();
+  do {
+    u8g.setFont(u8g_font_7x14B);
+    u8g.drawStr(17, 10, "System Info");
+    u8g.setFont(u8g_font_7x14);
+    u8g.drawStr(0, 30, "Ver: v2.7.1");
+    u8g.drawStr(0, 46, "Update: 23/8/26");
+    u8g.drawStr(0, 62, "By FJR|ecnu");
+  } while (u8g.nextPage());
+}
+// ------------------ Time setting ---------------------------------
+void digitalClockDisplay() {
+  u8g.firstPage();
+  do {
+    u8g.setFont(u8g_font_7x14);
+    u8g.setPrintPos(0, 10);
+    u8g.print(year());
+    u8g.print("-");
+    u8g.print(month());
+    u8g.print("-");
+    u8g.print(day());
+    u8g.setPrintPos(64, 62);
+    u8g.print(dayStr(weekday()));
+    u8g.setFont(u8g_font_freedoomr25n);
+    u8g.setPrintPos(8, 48);
+    u8g.print(hour());
+    u8g.print(":");
+    if (minute() < 10)
+      u8g.print("0");
+    u8g.print(minute());
+    u8g.setFont(u8g_font_freedoomr10r);
+
+    u8g.print(": ");
+    if (second() < 10)
+      u8g.print("0");
+    u8g.print(second());
+  } while (u8g.nextPage());
+}
+
+
+void processSyncMessage() {
+  unsigned long pctime;
+  const unsigned long DEFAULT_TIME = 1357041600;  // Jan 1 2013
+
+  if (nodemcu.find(TIME_HEADER)) {
+    pctime = nodemcu.parseInt();
+    if (pctime >= DEFAULT_TIME) {  // check the integer is a valid time (greater than Jan 1 2013)
+      setTime(pctime);             // Sync Arduino clock to the time received on the serial port
+    }
+  }
+}
+
+void gettime() {
+  nodemcu.begin(19200);
+
+  Serial.println("Waiting for sync message");
+  while (1) {
+    if (nodemcu.available()) {
+      processSyncMessage();
+    }
+    if (timeStatus() != timeNotSet) {
+      digitalClockDisplay();
+    }
+
+    delay(167);
+    if (digitalRead(BUTTON_SELECT_PIN) == LOW) {  // select button clicked, jump between screens
+      return 0;
+    }
+  }
+}
+
+// ------------------ weather setting ---------------------------------
+
+void Refresh() {
+  DeserializationError error = deserializeJson(doc, nodemcu);
+  if (!error)  //检查反序列化是否成功
+  {
+    if (doc["weather"].as<String>() != NULL)
+      weather_now = doc["weather"].as<String>();  // "Cloudy"
+    if (doc["Type"].as<String>() != NULL)
+      Type = doc["Type"].as<String>();  // "weather"
+    if (doc["Temperature"].as<String>() != NULL)
+      Temperature = doc["Temperature"].as<String>();  // 31
+
+    Serial.println(Type);
+    Serial.println(Temperature);
+    Serial.println(weather_now);
+
+  } else {
+    while (nodemcu.available() > 0) {
+      nodemcu.read();
+    }
+    return;
+  }
+}
+void showweather() {
+  u8g.firstPage();
+  do {
+    u8g.setFont(u8g_font_7x14B);
+    u8g.drawStr(30, 10, "Weather Info");
+    u8g.setFont(u8g_font_7x14);
+    u8g.drawStr(0, 28, "City:");
+    u8g.drawStr(40, 28, Type.c_str());
+    u8g.drawStr(0, 46, "Now:");
+    u8g.drawStr(40, 46, weather_now.c_str());
+    u8g.drawStr(0, 64, "temp:");
+    u8g.drawStr(40, 64, Temperature.c_str());
+    u8g.drawStr(56, 64, "C'");
+
+  } while (u8g.nextPage());
+}
+// ------------------ game setting ---------------------------------
+
+void jumpgame() {
+  char x1 = 0, y1 = 64, x2 = 122, y2 = 64;  //初始化字母生成位置
+  /*
+flag：代表移动哪个字母，
+flag_data：一次移动多少位置
+flag1：记录已经移动了几个字母
+life_data：生命值显示的数量
+rank：难度
+*/
+  byte flag = 0, flag_data = 3, flag1, life_data = 3, rank = 1;
+  bool button_flag = 1;  //这个状态为1的时候按键按下才能向上移动
+  int buttonState = 0;
+  int buttonState1 = 0;
+
+  /*
+grade：成绩
+grade_flag：为1时代表没有发生碰撞。如果为0表示已经发生碰撞
+*/
+  byte grade = 0;
+  bool grade_flag = 1;
+  while (1) {
+    //获取按钮状态
+    buttonState = digitalRead(BUTTON_SELECT_PIN);
+    buttonState1 = digitalRead(BUTTON_UP_PIN);
+
+    //设置移动的最大值和最小值
+    if (y1 > 64)
+      y1 = 64;
+    if (y1 < 10)
+      y1 = 10;
+    //生成界面
+    u8g.firstPage();
+    do {
+      u8g.setFont(u8g_font_7x14);
+      //生命值的显示
+      u8g.drawStr(80, 10, "life:");
+      u8g.setPrintPos(80 + 14, 20);
+      String life;
+      for (byte i = 1; i <= life_data; i++) {
+        life = life + "*";
+      }
+      u8g.print(life);
+      u8g.drawStr(0, 10, "score:");
+      u8g.setPrintPos(42, 10);
+      u8g.print(grade);
+      u8g.setPrintPos(x2, y2);
+      u8g.print(leter[flag]);
+      u8g.setPrintPos(x1, y1);
+      u8g.print(leter[0]);
+
+    } while (u8g.nextPage());
+    //为了让按钮不能长按做的一个判断
+    if (y1 < 64) {
+      button_flag = 0;
+    } else {
+      button_flag = 1;
+    }  //只有y1=64这个值才能生效
+
+    if (button_flag) {
+      if (buttonState == LOW) {
+        y1 -= 36;         //每次移动的方式
+        button_flag = 0;  //按下一次之后就会清0。等待唤醒
+      }
+    } else {
+      y1 += 3;  //按钮没置一时会一直向下落
+    }
+    //当生命值为0的时候
+
+    while (life_data <= 0) {
+      //画面显示内容
+      u8g.firstPage();
+      do {
+        u8g.setFont(u8g_font_7x14B);
+        u8g.drawStr(48, 24, "OVER");
+        u8g.setFont(u8g_font_7x14);
+        u8g.drawStr(0, 40, "Press 1st:EXIT");
+        u8g.drawStr(0, 56, "PRESS 2nd:RETRY");
+
+        //按键唤醒
+        buttonState = digitalRead(BUTTON_SELECT_PIN);
+        buttonState1 = digitalRead(BUTTON_UP_PIN);
+        if (buttonState == LOW) {
+          x1 = 0;
+          y1 = 64;
+          x2 = 122;
+          y2 = 64;  //64-18
+          flag = 0;
+          flag_data = 4;
+          flag1 = 0;
+          life_data = 3;
+          button_flag = 1;
+          rank = 1;
+          grade = 0;
+          grade_flag = 1;
+          break;
+        }
+        if (buttonState1 == LOW) { return 0; }
+
+      } while (u8g.nextPage());
+    }
+    //扣血的条件
+    if ((y2 - y1) < 7 && (x2 - x1) < 4) {
+      life_data--;  // grade--;
+      grade_flag = 0;
+    }
+    //移动字母每次移动的距离
+    x2 -= flag_data;
+    delay(30);  //刷新频率修改避免刷新过快
+    //字母从最左端移动到最右端时进行的处理
+    if (x2 < 0) {
+      //显示的字母
+      flag++;
+      //是否加血的标志位
+      if (grade_flag)
+        grade++;
+      //默认是加血的
+      grade_flag = 1;
+      //字母最大显示的数量，当相等时会清零
+      if (flag == leter_NUM) {
+        flag = 0;
+      }
+      //一共移动了几个字母
+      flag1++;
+      x2 = 122;
+      y1 = 64;
+      //移动字母数量大于5时难度会加1，速度会增加1
+      if (flag1 > 5) {
+        flag_data += 1;
+        rank++;
+        flag1 = 0;
+      }
+    }
+  }
+}
+
+// 初始化
+void setup() {
+  u8g.setColorIndex(1);  // set the color to white
+  mySerial.begin(9600);
+  Serial.begin(9600);
+  myMP3.begin(mySerial);
+  nodemcu.begin(19200);
+  pinMode(BUTTON_UP_PIN, INPUT_PULLUP);      // up button
+  pinMode(BUTTON_SELECT_PIN, INPUT_PULLUP);  // select button
+  pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);    // down button
+}
+
+
+void loop() {
+  byte volume = analogRead(Volume_PIN) * 30 / 1000;  //从A0引脚读取模拟值,数值为手动映射
+  //Serial.print("Looping vol:");
+  //Serial.println(volume);
+  //  Refresh();
+
+  myMP3.volume(volume);
+  static unsigned long last_interrupt_time = 0;
+  unsigned long interrupt_time = millis();
+  // If interrupts come faster than 150ms, assume it's a bounce and ignore
+  if (interrupt_time - last_interrupt_time > 150) {
+    if (current_screen == 0) {  // MENU SCREEN
+
+      // up and down buttons only work for the menu screen
+      if ((digitalRead(BUTTON_UP_PIN) == LOW) && (button_up_clicked == 0)) {  // up button clicked - jump to previous menu item
+        item_selected = item_selected - 1;                                    // select previous item
+        button_up_clicked = 1;                                                // set button to clicked to only perform the action once
+        if (item_selected < 0) {                                              // if first item was selected, jump to last item
+          item_selected = NUM_ITEMS - 1;
+        }
+      } else if ((digitalRead(BUTTON_DOWN_PIN) == LOW) && (button_down_clicked == 0)) {  // down button clicked - jump to next menu item
+        item_selected = item_selected + 1;                                               // select next item
+        button_down_clicked = 1;                                                         // set button to clicked to only perform the action once
+        if (item_selected >= NUM_ITEMS) {                                                // last item was selected, jump to first menu item
+          item_selected = 0;
+        }
+      }
+
+      if ((digitalRead(BUTTON_UP_PIN) == HIGH) && (button_up_clicked == 1)) {  // unclick
+        button_up_clicked = 0;
+      }
+      if ((digitalRead(BUTTON_DOWN_PIN) == HIGH) && (button_down_clicked == 1)) {  // unclick
+        button_down_clicked = 0;
+      }
+    }
+
+
+    if ((digitalRead(BUTTON_SELECT_PIN) == LOW) && (button_select_clicked == 0)) {  // select button clicked, jump between screens
+      button_select_clicked = 1;                                                    // set button to clicked to only perform the action once
+      if (current_screen == 0) { current_screen = 1; }                              // menu items screen --> screenshots screen
+      else {
+        current_screen = 0;
+      }  // qr codes screen --> menu items screen
+    }
+    if ((digitalRead(BUTTON_SELECT_PIN) == HIGH) && (button_select_clicked == 1)) {  // unclick
+      button_select_clicked = 0;
+    }
+    last_interrupt_time = interrupt_time;
+  }
+  // set correct values for the previous and next items
+  item_sel_previous = item_selected - 1;
+  if (item_sel_previous < 0) { item_sel_previous = NUM_ITEMS - 1; }  // previous item would be below first = make it the last
+  item_sel_next = item_selected + 1;
+  if (item_sel_next >= NUM_ITEMS) { item_sel_next = 0; }  // next item would be after last = make it the first
+
+  u8g.firstPage();  // required for page drawing mode for u8g library
+  do {
+
+    if (current_screen == 0) {  // MENU SCREEN
+
+      u8g.setFont(u8g_font_freedoomr10r);
+      u8g.setPrintPos(113, 25);
+      u8g.print(volume);
+
+      u8g.setFont(u8g_font_7x14);
+      u8g.drawStr(0, 15, menu_items[item_sel_previous]);
+      //u8g.drawHLine(0, 0, 45);
+      u8g.drawHLine(0, 16 + 2, 45);
+      u8g.drawHLine(0, 38 + 2, 45);
+      u8g.drawHLine(0, 60 + 2, 45);
+
+      //drawiconselect
+      u8g.drawHLine(45 + item_selected % 4 * 19, 33 + item_selected / 4 * 15, 20);
+      u8g.drawHLine(45 + item_selected % 4 * 19, 48 + item_selected / 4 * 15, 20);
+      u8g.drawVLine(45 + item_selected % 4 * 19, 33 + item_selected / 4 * 15, 16);
+      u8g.drawVLine(65 + item_selected % 4 * 19, 33 + item_selected / 4 * 15, 16);
+
+
+
+      u8g.setFont(u8g_font_7x14B);
+      u8g.drawStr(5, 37, ">");
+      u8g.drawStr(15, 15 + 20 + 2, menu_items[item_selected]);
+
+      u8g.setFont(u8g_font_7x14);
+      u8g.drawStr(0, 15 + 20 + 20 + 2 + 2, menu_items[item_sel_next]);
+
+      // draw scrollbar background
+      u8g.drawBitmapP(44 - 6, 0, 8 / 8, 64, bitmap_scrollbar_background);
+      u8g.drawBitmapP(44, 0, 80 / 8, 64, MainUI);  // draw screenshot
+
+      // draw scrollbar handle
+      u8g.drawBox(43, 64 / NUM_ITEMS * item_selected, 3, 64 / NUM_ITEMS);
+    } else  //if(current_screen == 1)
+    {
+      switch (item_selected) { //功能框架
+        case 0:
+          if (!mp3play) {
+            myMP3.resume();
+            mp3play = true;
+          } else {
+            myMP3.pause();
+            mp3play = false;
+            Serial.println(current_screen);
+          }
+          current_screen = 0;
+
+          break;
+        case 1:
+          myMP3.playNext();
+          current_screen = 0;
+          break;
+        case 2:
+          myMP3.playPrevious();
+          current_screen = 0;
+          break;
+        case 3:
+          gettime();
+          current_screen = 0;
+          break;
+        case 4:
+          showweather();
+          break;
+        case 5:
+          Refresh();
+          Refresh();
+          Refresh();
+          Refresh();
+          Refresh();  //采用多次刷新,因为获取json包可能失败
+          current_screen = 0;
+          break;
+        case 6:
+          jumpgame();
+          current_screen = 0;
+          break;
+        case 7:
+          showversion();
+      }
+    }
+  } while (u8g.nextPage());  // required for page drawing mode with u8g library
+}
